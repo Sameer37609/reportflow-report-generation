@@ -1,81 +1,59 @@
 # ReportFlow — Smart Business Report Generation System
 
-A polished sales reporting portfolio project built with Next.js App Router, React, TypeScript, Tailwind CSS, Lucide, Prisma and PostgreSQL. Explore revenue trends, category performance and filterable reports, then download CSV or JSON.
+**[Live Demo](https://reportflow-report-generation.vercel.app) · [GitHub Source](https://github.com/Sameer37609/reportflow-report-generation)**
 
-![Read-only ReportFlow public demo](docs/images/dashboard.png)
+A full-stack sales reporting application built with Next.js, TypeScript, PostgreSQL and Prisma. Explore sales KPIs, revenue trends and category performance, preview filtered reports, and download CSV or JSON.
 
-**Two explicit modes:** a public read-only demo with fictional data and no database, and a local PostgreSQL application with persistent CRUD. Authentication and Admin/Viewer roles are **not implemented** and are not required for the read-only demo. Do not publish local mode.
+**The hosted Vercel application is a read-only portfolio demo.** It uses 48 fictional transactions, connects to no database and rejects public write operations on the server. Visitors can explore reports and export results without an account; custom previews are not saved.
 
-## Live demo
+The local application provides PostgreSQL-backed transaction CRUD and persistent saved report definitions. Local records and credentials are never included in the public demo. Neither mode implements user authentication or Admin/Viewer permissions.
 
-Not deployed yet. A future public demo will use fictional data in server-enforced read-only mode. There is no hosted URL to share at this stage; run it locally using the commands below.
-
-Built by [Sameer37609](https://github.com/Sameer37609). The intended repository name is `reportflow-report-generation`.
+![ReportFlow dashboard with fictional demo data](docs/images/dashboard.png)
 
 ## Features
 
-- Responsive analytics dashboard with revenue, transaction count, completion count and average-value KPIs.
-- Revenue trend and category charts, search, category/status filters and newest-date transaction sorting.
-- Sales Summary and Category Performance reports with inclusive date ranges and optional categories.
-- Real CSV/JSON downloads with metadata, exact-money summaries and filtered transaction details. Category Performance includes category totals.
-- Public demo: 48 fictional transactions, sample reports, live custom report exploration and exports. No saved changes or writable APIs.
-- Local mode: PostgreSQL transaction create/edit/delete, saved report definitions, refresh/restart persistence, validation, loading/error/retry states and delete confirmation.
+- **Analytics dashboard:** completed revenue, total transactions, completed transactions and average transaction value, with monthly revenue and category charts.
+- **Reporting:** Sales Summary and Category Performance, inclusive date ranges, optional category filters, saved report previews and live custom report exploration.
+- **Exports:** CSV and JSON downloads containing report metadata, filtered transactions and exact-money summaries; Category Performance also includes category totals.
+- **Search and filtering:** customer/transaction ID search, category/status filters, report title search and report-type filters. Transactions are sorted newest-first; column-click sorting is not implemented.
+- **Local data management:** validated transaction create/edit/delete, duplicate-ID handling, delete confirmation, saved reports and persistence after refresh or server restart.
+- **Responsive interface:** desktop, tablet and mobile layouts, visible keyboard focus, named controls, loading/error feedback and useful empty states.
 
-## Mode and security contract
+Revenue counts completed transactions only; total transaction count includes all statuses. Server and export calculations use decimal arithmetic, PostgreSQL stores DECIMAL(12,2), and UI calculations sum integer cents. Reports reflect current records rather than immutable historical snapshots.
 
-| Setting         | `demo`                                                                    | `local`                               |
-| --------------- | ------------------------------------------------------------------------- | ------------------------------------- |
-| Data source     | Fixed fictional records                                                   | Local PostgreSQL `reportflow_dev`     |
-| Database access | Prohibited by application guard                                           | Allowed after local-target validation |
-| Writes          | Server proxy rejects POST/PUT/PATCH/DELETE, including arbitrary API paths | Validated CRUD on loopback            |
-| Saved reports   | Fixed examples; custom previews are unsaved                               | Persisted definitions                 |
-| Exports         | Fictional data only                                                       | Database-derived data                 |
-| Auth/roles      | None, no write capability                                                 | None; development only                |
+## Technology
 
-`REPORTFLOW_MODE` has no fallback. Missing/invalid values fail configuration checks; request handling also fails closed. Vercel hosting rejects `local` mode. A database access guard and separate read source prevent demo requests from querying PostgreSQL even if a connection URL is accidentally present. Pages resolve mode per request rather than embedding local/demo state into static HTML. The browser receives only the mode label, never database credentials.
+Next.js App Router · React · TypeScript · Tailwind CSS · Lucide React · Next.js Route Handlers · Prisma ORM · PostgreSQL · Vercel
 
-## Requirements
+Charts use SVG/CSS. CSV/JSON exports use shared calculation and formatting utilities without an additional export library.
 
-Node.js 22.18+ and npm. PostgreSQL is needed **only for local mode**. Verified versions: Next.js 16.4.5, React 19.3.1, Prisma 6.19.3, PostgreSQL 18. Use `npm ci` and the included lockfile for reproducible versions. Webpack is intentional for the Windows compiler fallback.
+## Run the demo locally
 
-## Run the public demo without PostgreSQL
+Requires Node.js 22.18+ and npm. No PostgreSQL setup or environment file is needed for demo mode.
 
-```powershell
+```bash
 npm ci
 npm run demo:dev
 ```
 
-Open http://127.0.0.1:3000. These explicit demo scripts set `REPORTFLOW_MODE=demo` and mask `DATABASE_URL` before Next loads local environment files.
+Open [localhost:3000](http://127.0.0.1:3000). For an optimized build:
 
-To verify the optimized demo:
-
-```powershell
+```bash
 npm run demo:build
 npm run demo:start
 ```
 
-Demo setup does not need `.env`, PostgreSQL, migration commands, authentication secrets or paid services. Prisma client generation during installation does not connect to a database and has been verified with an empty DATABASE_URL.
+The demo scripts explicitly select demo mode and mask any local database connection variable. Installation generates the Prisma client but does not connect to a database, apply migrations or seed data.
 
-## Local PostgreSQL setup
+## Local PostgreSQL development
 
-Credentials belong only in Git-ignored `.env`. Required names:
+Create a dedicated local development role/database using your PostgreSQL administrator account:
 
-- `REPORTFLOW_MODE=local`
-- `DATABASE_URL` — a PostgreSQL connection URL for localhost and `reportflow_dev`; keep its value private.
-
-`.env.example` contains placeholders. Do not put secrets in NEXT_PUBLIC variables. The setup helper prompts privately and never prints the password or URL:
-
-```powershell
-.\scripts\configure-local-db.ps1
-```
-
-Create the database first if it does not exist. With PostgreSQL's command-line tools on PATH, connect with your administrator account:
-
-```powershell
+```bash
 psql -h localhost -p 5432 -U postgres -d postgres -W
 ```
 
-At the SQL prompt:
+At the SQL prompt, enter the following. The password is entered privately through the prompt:
 
 ```sql
 CREATE ROLE reportflow_user LOGIN CREATEDB;
@@ -84,74 +62,60 @@ CREATE DATABASE reportflow_dev OWNER reportflow_user;
 \q
 ```
 
-Enter passwords only at local prompts. Substitute your administrator username/install path if different. Do not repeat CREATE statements for existing objects. CREATEDB is for Prisma's development shadow database, not a production role.
+Do not repeat CREATE statements for existing objects. Substitute your administrator account and PostgreSQL executable path if needed. CREATEDB is used for Prisma's development shadow database, not a production application role.
+
+Configure a Git-ignored `.env` using [.env.example](.env.example) as a template:
+
+| Variable          | Local development                                 | Hosted demo               |
+| ----------------- | ------------------------------------------------- | ------------------------- |
+| `REPORTFLOW_MODE` | `local`                                           | `demo`                    |
+| `DATABASE_URL`    | Private connection URL for local `reportflow_dev` | Not required; leave unset |
+
+On Windows, the setup helper prompts privately, URL-encodes the password and refuses to overwrite an existing `.env`:
 
 ```powershell
+.\scripts\configure-local-db.ps1
+```
+
+On other systems, create `.env` locally and URL-encode special characters in the password. Never commit credentials or expose them through NEXT_PUBLIC variables.
+
+```bash
 npm ci
 npm run db:generate
 npm run db:migrate
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. For a local production-mode check, use `npm run build` then `npm start`; `.env` must explicitly select local mode. Normal dev/start scripts bind to loopback. No local authentication is provided.
+Open [localhost:3000](http://127.0.0.1:3000). Local mode requires an explicit setting and a localhost database named `reportflow_dev`; normal start commands bind to loopback. Keep this unauthenticated writable workspace local.
 
-On the Codex runtime where npm is not on PATH, already-installed packages can be run directly:
+An optional fictional seed is available for empty local tables:
 
-```powershell
-node scripts/demo.mjs dev --webpack --hostname 127.0.0.1
-# Or, using the private .env with REPORTFLOW_MODE=local:
-node scripts/next.mjs dev --webpack --hostname 127.0.0.1
-```
-
-Stop servers before building or regenerating Prisma on Windows. OneDrive may leave stale generated `.next` entries; only that generated folder should be cleared if necessary. The WASM fallback uses an internal Next setting; recheck it when upgrading Next.
-
-## Database and calculations
-
-`Transaction` stores an internal ID, unique business transaction ID, customer, category, DECIMAL(12,2) amount, calendar date, status and timestamps. `SavedReport` stores title, type, date range, optional category and timestamps. Reports reflect current records rather than frozen historical snapshots.
-
-Revenue counts Completed transactions only. Average value divides completed revenue by completed count; total count includes all statuses. Server/export calculations use Prisma Decimal; chart calculations sum integer cents. JSON exports preserve exact money as decimal strings, with USD explicitly identified. Frontend data loading is intentionally simple and portfolio-scale rather than paginated for very large databases.
-
-## REST APIs and exports
-
-JSON API responses use `{data: ...}` / `{error: "..."}`; DELETE returns 204. Invalid input returns 400, denied demo writes/origins return 403, missing records return 404, duplicate transaction IDs return 409 and unavailable data returns 503. Local updates use PUT, not PATCH.
-
-| Endpoint                                               | Methods               | Purpose                                     |
-| ------------------------------------------------------ | --------------------- | ------------------------------------------- |
-| `/api/transactions`                                    | GET, local POST       | Read transactions / create locally          |
-| `/api/transactions/:id`                                | GET, local PUT/DELETE | Read/edit/delete a local transaction        |
-| `/api/reports`                                         | GET, local POST       | List definitions / save locally             |
-| `/api/reports/:id`                                     | GET, local DELETE     | Filtered rows, definition and exact metrics |
-| `/api/analytics`                                       | GET                   | Overall KPI totals                          |
-| `/api/reports/:id/export?format=csv` or `json`         | GET                   | Download using the saved report's filters   |
-| `/api/reports/preview?...`                             | GET                   | Unsaved validated live report               |
-| `/api/reports/preview/export?...&format=csv` or `json` | GET                   | Download an unsaved filtered report         |
-
-Preview query fields: `title`, `type`, `start`, `end`, optional `category`. Types: Sales Summary or Category Performance. Dates use YYYY-MM-DD. Categories: Software, Consulting, Design, Marketing. Duplicate/unknown query keys, invalid types/dates/categories and reversed ranges are rejected. Saved exports reject attempts to override saved filters; use preview exports for custom filters.
-
-CSV is UTF-8 with BOM, CRLF rows and quoted/escaped fields. Formula-like text starting with =, +, -, @ after whitespace, or leading tab/CR/LF, is prefixed with an apostrophe. CSV preserves spreadsheet safety; JSON retains the original text. Filenames are sanitized, responses use attachment headers and correct content types, and downloads are not cached. Valid empty reports download metadata, zero totals and column headers. Errors show inline without navigating away from the report.
-
-## Architecture
-
-- `lib/mode.ts`, `proxy.ts`, `next.config.ts`: explicit mode, fail-closed configuration and demo write enforcement.
-- `lib/source.ts`: chooses fictional reads or dynamically loads the local database path.
-- `lib/db.ts`: guarded, reused Prisma client.
-- `lib/api.ts`: input validation, safe errors and local Origin checks.
-- `lib/exports.ts`, `lib/report-export.ts`: exact summaries, CSV safety, export responses and preview validation.
-- `components/`: shared shell, cards/charts, transaction editor and download controls.
-
-No auth framework, extra backend service or new chart/export library was added.
-
-## Optional fictional seed — local only
-
-```powershell
+```bash
 node --env-file=.env --experimental-strip-types prisma/seed.mts
 ```
 
-This requires explicit local mode and empty local tables. It atomically adds 48 fictional transactions and three reports and never resets existing data. It was not run during these fixes.
+It requires local mode, refuses nonempty tables and never resets existing records.
 
-## Tests
+## REST APIs and exports
 
-```powershell
+| Endpoint                                       | Methods               | Purpose                                          |
+| ---------------------------------------------- | --------------------- | ------------------------------------------------ |
+| `/api/transactions`                            | GET; local POST       | List/create transactions                         |
+| `/api/transactions/:id`                        | GET; local PUT/DELETE | Read/edit/delete a transaction                   |
+| `/api/reports`                                 | GET; local POST       | List/save report definitions                     |
+| `/api/reports/:id`                             | GET; local DELETE     | Definition, filtered rows and calculated metrics |
+| `/api/analytics`                               | GET                   | Overall KPI totals                               |
+| `/api/reports/:id/export?format=csv` or `json` | GET                   | Download a saved/sample report using its filters |
+| `/api/reports/preview`                         | GET                   | Validate and calculate an unsaved report         |
+| `/api/reports/preview/export`                  | GET                   | Export an unsaved report                         |
+
+Preview parameters are `title`, `type`, `start`, `end` and optional `category`; preview exports also require `format`. Types are Sales Summary or Category Performance, and dates use YYYY-MM-DD. The server validates categories, statuses, dates, money precision and report ranges. Errors use consistent JSON responses with appropriate HTTP status codes.
+
+CSV downloads use UTF-8, escaped quoted fields and spreadsheet formula-prefix protection. JSON retains exact monetary values as decimal strings. Downloads include sanitized filenames, appropriate content types and attachment headers. Empty reports retain metadata and zero totals. Exported values use the same reporting rules as previews.
+
+## Tests and verification
+
+```bash
 npm run lint
 npm run typecheck
 npm test
@@ -161,39 +125,34 @@ npm audit --omit=dev
 npm run demo:build
 ```
 
-To run public API regressions, start the built demo on port 3004:
+The automated suite covers calculations, CSV formula protection and escaping, empty exports, safe filenames, explicit deployment modes and compatibility of security-patched dependencies. To test demo APIs, serve the production demo on port 3004 and run:
 
-```powershell
+```bash
 node scripts/demo.mjs start --hostname 127.0.0.1 --port 3004
+# In another terminal:
 node tests/demo-api.mjs
 ```
 
-For scoped local database regressions, serve local mode on port 3005, then run in another terminal:
+Scoped local database/export/persistence test instructions and earlier results are recorded in [verification documentation](docs/PUBLIC-DEMO-VERIFICATION.md). These tests write identifiable fixtures and remove only recorded IDs; do not run them concurrently with manual data edits.
 
-```powershell
-$env:TEST_BASE_URL='http://127.0.0.1:3005'
-node tests/audit-api.mjs
-node tests/local-exports.mjs
-# Stop and restart the local server before cleanup/persistence verification:
-node tests/audit-cleanup.mjs
-```
+On 5 November 2026, hosted smoke checks verified six public pages, fictional-data totals, both report types' CSV/JSON responses and six safe write-denial probes. Full accessibility conformance and high-volume performance are not claimed.
 
-These tests keep exact fixture IDs in ignored test-results, refuse an outstanding audit marker and compare before/after existing-data fingerprints. Do not edit records concurrently or rerun before cleanup. Local APIs intentionally have no auth: the old audit's security-failure message describes **local mode**, not the read-only public demo.
+## Deployment and security
 
-Manual checklist: download CSV/JSON from both report types; explore category/date filters and empty periods; inspect values in a spreadsheet/text editor; verify demo mutation controls are absent; test mobile navigation and keyboard focus; in local mode add/edit/delete a transaction and revisit a report after restart. Automated test outcomes and limitations are recorded in [the latest verification report](docs/PUBLIC-DEMO-VERIFICATION.md).
+The live demo is hosted on Vercel from the repository's `main` branch. Production demo mode requires `REPORTFLOW_MODE=demo` during build and runtime; no hosted PostgreSQL database or database credentials are needed. Standard Next.js build settings use the existing build script. Prisma's postinstall step generates its client only: migrations and seeds are not run on Vercel.
 
-## Dependency security
+Missing or invalid mode configuration fails closed. A server proxy rejects demo mutations, mutation handlers independently check mode, and the database function refuses demo access. Demo reads use fixed fictional records; hidden UI controls are not the security boundary. The local PostgreSQL path remains separate.
 
-Patch updates: Next.js/SWC/lint config 16.4.5 and Prisma/client 6.19.3. Prisma CLI is a development dependency. Two scoped overrides remediate dependencies still pinned by upstream tooling: `@prisma/config → deepmerge-ts 8.0.0` and `@typescript-eslint/typescript-estree → minimatch 11.0.1`.
+Security fixes include compatible Next.js/Prisma patch updates and two scoped transitive overrides documented in the verification report. The latest recorded full/runtime audits reported zero advisories; rerun them before future releases. Review overrides when updating dependencies.
 
-These are targeted transitive-major overrides, not `npm audit fix --force`. The used merge/glob APIs and Node requirements were reviewed; consumer-API tests, Prisma generation/validation/migration checks, lint, build and database regressions verify this project's usage. Review/remove overrides when upstream supports patched versions, and rerun all checks when updating. Current full and runtime advisory scans report **zero advisories**; this is a dated result, not a permanent security guarantee.
+## Structure and limitations
 
-## GitHub and hosting readiness
+- `app/`: pages and REST Route Handlers.
+- `components/`: shared shell, charts, forms and export controls.
+- `lib/`: deployment mode, data sources, validation, calculations and exports.
+- `prisma/`: schema, migrations and optional fictional seed.
+- `tests/`: calculation, security, export and scoped API regressions.
 
-Source, migrations, tests, fictional data, docs, screenshot and placeholder `.env.example` are intended for publication review. Real credentials, backups, local records, dependencies, builds and test artifacts are ignored. Ignore rules do not protect against forced staging; inspect staged files before publication. GitHub publication and hosted deployment require separate approval.
+No user accounts, sessions or Admin/Viewer authorization are implemented. The public demo cannot persist edits. Lists are loaded in full rather than paginated for large datasets, reports are not immutable snapshots, and concurrent-edit conflict handling is not included. Calendar presets use the fictional dataset's 2026 periods; All time includes every record. Accessibility basics have been checked, not a full WCAG audit.
 
-The read-only demo is prepared for a future Next.js Node-runtime host such as Vercel. Set **REPORTFLOW_MODE=demo** in both build and runtime environments, omit DATABASE_URL, install development/build dependencies so Prisma generation can run, and use `npm run demo:build` (or standard build with explicit demo mode). No production database, migrations, auth secrets or paid services are required. Vercel supplies its own runtime; the local `demo:start` command is for previewing locally.
-
-Hosted behavior is **not tested**, because deployment remains prohibited. Review provider configuration and run hosted smoke/security/download checks after approval. Never configure hosted local mode or remove the guards to make local data reachable. A future authenticated writable system is a separate phase requiring server-side permissions and sessions.
-
-Known limitations: no authentication/roles, no concurrent-edit detection, no large-data pagination, reports are not historical snapshots, and no full assistive-technology/WCAG audit. Accessibility basics and browser checks are verified, not a claim of complete accessibility compliance.
+Built by [Sameer37609](https://github.com/Sameer37609). This is an independent portfolio project; fictional transactions do not represent real customer activity.
