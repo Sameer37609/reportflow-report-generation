@@ -1,0 +1,32 @@
+node_modules/
+.next/
+.pnpm-store/
+*.tsbuildinfo
+test-results/
+.env*
+!.env.example
+.vercel/
+coverage/
+playwright-report/
+*.log
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.pem
+*.key
+backups/
+pgdata/
+local-data/
+.DS_Store
+Thumbs.db
+# Local database dumps and backups; migration sources remain publishable.
+*.sql
+!prisma/migrations/**/migration.sql
+*.sqlite
+*.sqlite3
+*.db
+*.p12
+*.pfx
+# Generated local agent guidance is not part of the application source.
+/AGENTS.md
